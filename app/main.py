@@ -1,6 +1,7 @@
 import sys
 import os
 import zlib
+import hashlib
 def main():
     # You can use print statements as follows for debugging, they'll be visible when running tests.
     print("Logs from your program will appear here!", file=sys.stderr)
@@ -21,6 +22,24 @@ def main():
             file = zlib.decompress(f.read())
             header, content = file.split(b"\0", maxsplit=1)
             print(content.decode(encoding="utf-8"), end="")
+    elif command == "hash-object" and sys.argv[2] == '-w':
+        #make hash from content + header
+        with open(sys.argv[3], "r") as f:
+            content = f.read()
+        
+        header = f"blob {len(content)}\x00"
+        content = header + content
+        store = content.encode()
+
+        sha = hashlib.sha1(store).hexdigest()
+        #make folder
+        dir = f".git/objects/{sha[0:2]}"
+        os.mkdir(dir)
+        #write to folder
+        with open(f"{dir}/{sha[2:]}","wb") as f:
+            f.write(zlib.compress(store))
+        print(sha, end="")
+        return sha
     else:
         raise RuntimeError(f"Unknown command #{command}")
 
