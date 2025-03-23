@@ -6,8 +6,6 @@ def main():
     # You can use print statements as follows for debugging, they'll be visible when running tests.
     print("Logs from your program will appear here!", file=sys.stderr)
 
-    # Uncomment this block to pass the first stage
-    #
     command = sys.argv[1]
     if command == "init":
         os.mkdir(".git")
@@ -26,11 +24,9 @@ def main():
         #make hash from content + header
         with open(sys.argv[3], "r") as f:
             content = f.read()
-        
         header = f"blob {len(content)}\x00"
         content = header + content
         store = content.encode()
-
         sha = hashlib.sha1(store).hexdigest()
         #make folder
         dir = f".git/objects/{sha[0:2]}"
@@ -39,7 +35,17 @@ def main():
         with open(f"{dir}/{sha[2:]}","wb") as f:
             f.write(zlib.compress(store))
         print(sha, end="")
-        return sha
+    elif command == "ls-tree" and sys.argv[2] == "--name-only":
+        dir = ".git/objects/{}/{}".format(sys.argv[3][0:2],sys.argv[3][2:])
+        with open(dir,"rb") as f:
+            file = zlib.decompress(f.read())
+            content = file.split(b"\0")[1:]
+            print(content[0].decode().split()[1])
+            for c in content[1:len(content) - 1]:
+                
+                print(c[20: ].decode().split()[1])
+
+    
     else:
         raise RuntimeError(f"Unknown command #{command}")
 
