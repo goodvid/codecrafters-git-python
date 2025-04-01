@@ -19,7 +19,7 @@ def write_blob(dir):
         sha = hashlib.sha1(store).hexdigest()
         #make folder
         dir = f".git/objects/{sha[0:2]}"
-        os.mkdir(dir)
+        os.makedirs(dir, exist_ok=True)
         #write to folder
         with open(f"{dir}/{sha[2:]}","wb") as f:
             f.write(zlib.compress(store))
@@ -74,12 +74,46 @@ def write_tree(dir):
     store = header.encode() + store
     sha = hashlib.sha1(store).hexdigest()
     git_path = f".git/objects/{sha[0:2]}"
-    os.mkdir(git_path)
+    os.makedirs(git_path,exist_ok=True)
         #write to folder
     with open(f"{git_path}/{sha[2:]}","wb") as f:
             f.write(zlib.compress(store))
     #print(sha, end="")
     return sha
+
+def write_commit(tree_sha, commit_sha, message):
+    #print(tree_sha,commit_sha,message)
+    header = b"commit "
+    tree = tree_sha.encode()
+
+    parent = b""
+    if commit_sha:
+        parent = commit_sha.encode()
+
+    mess =  message.encode() # Assuming `message` is bytes
+
+    author = b"author Vidya Vuppala <test@example.com> 1711845600 +0000\n"
+    committer = b"committer Vidya Vuppala <test@example.com> 1711845600 +0000\n\n"
+
+    contents = b"".join([b"tree %b\n" % tree_sha.encode(),
+                    b"parent %b\n" % commit_sha.encode(),
+                    author,
+                    committer,
+                    message.encode(),
+                    b"\n",])
+
+    header += str(len(contents)).encode() + b"\0"
+    contents = header + contents
+    sha = hashlib.sha1(contents).hexdigest()
+    git_path = f".git/objects/{sha[0:2]}"
+    os.makedirs(git_path,exist_ok=True)
+        #write to folder
+    with open(f"{git_path}/{sha[2:]}","wb") as f:
+            f.write(zlib.compress(contents))
+    print(sha)
+    #print(tree)
+
+    #content = b"tree " + tree_sha + 
 
 def main():
     # You can use print statements as follows for debugging, they'll be visible when running tests.
@@ -101,6 +135,9 @@ def main():
         read_tree()
     elif command == "write-tree":
          print(write_tree(os.getcwd()))
+    elif command == "commit-tree":
+        #print(sys.argv)
+        write_commit(sys.argv[2], sys.argv[4],sys.argv[6])
     else:
         raise RuntimeError(f"Unknown command #{command}")
 
